@@ -2,7 +2,8 @@
 
 namespace Omnipay\NetBanx\Message;
 
-use Guzzle\Http\Message\RequestInterface;
+use Psr\Http\Message\RequestInterface;
+use Psr\Http\Message\ResponseInterface;
 
 abstract class HostedAbstractRequest extends \Omnipay\Common\Message\AbstractRequest
 {
@@ -50,20 +51,10 @@ abstract class HostedAbstractRequest extends \Omnipay\Common\Message\AbstractReq
      * @param null   $data
      * @param string $method
      *
-     * @return \Guzzle\Http\Message\Response
+     * @return ResponseInterface
      */
-    public function sendRequest($action, $data = null, $method = RequestInterface::POST)
+    public function sendRequest($action, $data = null, $method = 'POST')
     {
-        // don't throw exceptions for 4xx errors, need the data for error messages
-        $this->httpClient->getEventDispatcher()->addListener(
-            'request.error',
-            function ($event) {
-                if ($event['response']->isClientError()) {
-                    $event->stopPropagation();
-                }
-            }
-        );
-
         $username = $this->getKeyId();
         $password = $this->getKeyPassword();
         $base64 = base64_encode($username.':'.$password);
@@ -80,7 +71,7 @@ abstract class HostedAbstractRequest extends \Omnipay\Common\Message\AbstractReq
         $data = json_encode($data);
 
         // Return the response we get back
-        return $this->httpClient->createRequest($method, $url, $headers, $data)->send();
+        return $this->httpClient->request($method, $url, $headers, $data);
     }
 
     /**
